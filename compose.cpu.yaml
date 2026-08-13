@@ -1,0 +1,6 @@
+services:
+  worker:
+    deploy:
+      resources:
+        reservations:
+          devices: !reset []

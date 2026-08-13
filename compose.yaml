@@ -1,0 +1,100 @@
+name: cudaops
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      CUDAOPS_REDIS_ADDR: redis:6379
+      CUDAOPS_DATA_DIR: /data
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - job-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      data-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      CUDAOPS_REDIS_ADDR: redis:6379
+      CUDAOPS_DATA_DIR: /data
+      CUDAOPS_PROCESSOR: /usr/local/bin/cudaops-process
+      CUDAOPS_PROCESS_TIMEOUT: 60s
+      CUDAOPS_MAX_ATTEMPTS: "2"
+    volumes:
+      - job-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      data-init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  data-init:
+    image: ubuntu:24.04
+    command: ["chown", "10001:10001", "/data"]
+    volumes:
+      - job-data:/data
+    restart: "no"
+
+  redis:
+    image: redis:8.2.1-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - api
+      - worker
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: cudaops
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  job-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
