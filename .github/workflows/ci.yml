@@ -45,4 +45,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose config --quiet
+      - run: docker compose -f compose.yaml -f compose.cpu.yaml config --quiet
       - run: docker build --target worker -t cudaops-worker:test .
+      - name: CPU fallback smoke test
+        run: |
+          set -euo pipefail
+          trap 'docker compose -f compose.yaml -f compose.cpu.yaml logs; docker compose -f compose.yaml -f compose.cpu.yaml down -v' EXIT
+          docker compose -f compose.yaml -f compose.cpu.yaml up -d --build redis api worker
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' | base64 -d > tiny.png
+          for i in {1..30}; do curl -fsS http://localhost:8080/readyz && break; sleep 1; done
+          response=$(curl -fsS -F image=@tiny.png -F device=auto http://localhost:8080/v1/jobs)
+          id=$(printf '%s' "$response" | jq -r .id)
+          for i in {1..30}; do
+            status=$(curl -fsS "http://localhost:8080/v1/jobs/$id")
+            state=$(printf '%s' "$status" | jq -r .status)
+            [ "$state" = succeeded ] && break
+            [ "$state" = failed ] && { printf '%s\n' "$status"; exit 1; }
+            sleep 1
+          done
+          printf '%s' "$status" | jq -e '.status == "succeeded" and .used_device == "cpu" and .fallback_used == true'
+          curl -fsS "http://localhost:8080/v1/jobs/$id/result" -o result.png
+          test "$(head -c 8 result.png | base64)" = "iVBORw0KGgo="
