@@ -44,6 +44,9 @@ func TestCreateAndResultLifecycle(t *testing.T) {
 	if filepath.Ext(fake.value.InputPath) != ".png" {
 		t.Fatalf("unsafe or wrong input path: %s", fake.value.InputPath)
 	}
+	if fake.value.InputPath == fake.value.OutputPath {
+		t.Fatal("input and output paths must remain distinct for PNG uploads")
+	}
 
 	fake.value.Status = job.StatusRunning
 	request := httptest.NewRequest(http.MethodGet, "/v1/jobs/id/result", nil)

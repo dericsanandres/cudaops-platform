@@ -126,8 +126,8 @@ func (s *Server) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := uuid.NewString()
-	input := filepath.Join(s.dataDir, id+ext)
-	output := filepath.Join(s.dataDir, id+".png")
+	input := filepath.Join(s.dataDir, id+"-input"+ext)
+	output := filepath.Join(s.dataDir, id+"-output.png")
 	if err := os.WriteFile(input, image, 0o600); err != nil {
 		writeError(w, http.StatusServiceUnavailable, "storage_unavailable")
 		return
