@@ -58,8 +58,27 @@ Port-forward the API for the existing acceptance flow:
 kubectl -n cudaops port-forward service/cudaops-cudaops-api 8080:8080
 ```
 
+## Prometheus Operator integration
+
+Clusters using Prometheus Operator can opt into ServiceMonitors and the included application alert rules. Add the labels required by the installed operator's selectors, then enable each resource:
+
+```yaml
+monitoring:
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+  prometheusRule:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+```
+
+The alert rules notify on terminal job failures, retryable processor launch failures, and automatic CUDA-to-CPU fallback. They are operational signals, not an availability SLO; tune routing and thresholds for the target environment.
+The supplied rules match the standard `namespace` and release-specific `service` labels added by the ServiceMonitor, so enable both resources together as shown above.
+
 ## Operational notes
 
 - The chart deliberately creates one worker because the application currently processes one image at a time and shared-file storage is part of the job contract.
 - Redis persistence preserves stream state across pod restarts. It has no authentication or HA configuration, matching the project's documented v0.1 limitations.
-- GPU telemetry collection, Prometheus Operator resources and rule routing, SLO enforcement, and a production Redis topology remain separate milestones and cluster-level responsibilities.
+- GPU telemetry collection, Prometheus Operator installation and rule routing, SLO enforcement, and a production Redis topology remain cluster-level responsibilities. The chart supplies only the opt-in application ServiceMonitors and alert rules documented above.
