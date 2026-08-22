@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cudaops
+description: Deploy the CUDAOps API, GPU worker, and Redis queue.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

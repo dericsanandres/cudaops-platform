@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cudaops.fullname" . }}-worker
+  labels:
+    {{- include "cudaops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  selector:
+    {{- include "cudaops.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+  ports:
+    - name: metrics
+      port: 8081
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cudaops.fullname" . }}-worker
+  labels:
+    {{- include "cudaops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "cudaops.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: /metrics
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "cudaops.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.worker.gpu.enabled .Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.worker.nodeSelector | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: worker
+          image: {{ printf "%s:%s" .Values.worker.image.repository (default .Chart.AppVersion .Values.worker.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8081
+          env:
+            - name: CUDAOPS_REDIS_ADDR
+              value: {{ include "cudaops.fullname" . }}-redis:6379
+            - name: CUDAOPS_DATA_DIR
+              value: /data
+            - name: CUDAOPS_PROCESSOR
+              value: /usr/local/bin/cudaops-process
+            - name: CUDAOPS_PROCESS_TIMEOUT
+              value: {{ .Values.worker.processTimeout | quote }}
+            - name: CUDAOPS_MAX_ATTEMPTS
+              value: {{ .Values.worker.maxAttempts | quote }}
+          resources:
+            {{- if .Values.worker.gpu.enabled }}
+            requests:
+              {{- toYaml .Values.worker.resources.requests | nindent 14 }}
+            limits:
+              {{- toYaml .Values.worker.resources.limits | nindent 14 }}
+              {{ .Values.worker.gpu.resourceName }}: {{ .Values.worker.gpu.count }}
+            {{- else }}
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: metrics
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-data" (include "cudaops.fullname" .)) .Values.data.existingClaim }}

@@ -60,9 +60,12 @@ docker compose config --quiet
 
 GPU parity checks require an RTX 5060 (compute capability `sm_120`) and CUDA 13.1. The benchmark warms each implementation and reports repeated-run median and p95 latency; no benchmark values are checked into the repository.
 
+## Kubernetes
+
+The Phase 2 Helm chart deploys the API, GPU worker, Redis, and shared job storage to a GPU-enabled Kubernetes cluster. See [the Kubernetes deployment guide](docs/deploy-kubernetes.md) for required RWX storage, image registry configuration, GPU scheduling, and the CPU-only override.
+
 ## v0.1 limitations
 
-One local worker processes one image at a time. Storage is disposable, ports bind only to localhost, and there is no authentication, cancellation, retention policy, web UI, distributed tracing, or remote GPU CI. Kubernetes, Helm, Terraform, DCGM, and additional image operations are intentionally deferred.
+One worker processes one image at a time. There is no authentication, cancellation, retention policy, web UI, distributed tracing, or remote GPU CI. Terraform, Prometheus Operator resources, cluster-managed GPU telemetry, production Redis, and additional image operations remain deferred.
 
 This independent project is not affiliated with or endorsed by NVIDIA.
-

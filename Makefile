@@ -1,4 +1,4 @@
-.PHONY: build test test-go test-processor fmt vet compose-config benchmark
+.PHONY: build test test-go test-processor fmt vet compose-config benchmark helm-template
 
 build:
 	go build ./cmd/...
@@ -27,3 +27,5 @@ compose-config:
 benchmark:
 	./scripts/benchmark.sh $${IMAGE:?set IMAGE=/path/to/image.png}
 
+helm-template:
+	helm template cudaops deploy/helm/cudaops

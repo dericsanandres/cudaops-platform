@@ -67,3 +67,12 @@ jobs:
           printf '%s' "$status" | jq -e '.status == "succeeded" and .used_device == "cpu" and .fallback_used == true'
           curl -fsS "http://localhost:8080/v1/jobs/$id/result" -o result.png
           test "$(head -c 8 result.png | base64)" = "iVBORw0KGgo="
+
+  helm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/cudaops
+      - run: helm template cudaops deploy/helm/cudaops > /dev/null
+      - run: helm template cudaops deploy/helm/cudaops --values deploy/helm/cudaops/values-cpu.yaml > /dev/null

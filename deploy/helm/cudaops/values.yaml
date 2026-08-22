@@ -1,0 +1,58 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+api:
+  image:
+    repository: ghcr.io/dericsanandres/cudaops-platform-api
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+worker:
+  image:
+    repository: ghcr.io/dericsanandres/cudaops-platform-worker
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  nodeSelector:
+    nvidia.com/gpu.compute.major: "12"
+  gpu:
+    enabled: true
+    resourceName: nvidia.com/gpu
+    count: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  processTimeout: 60s
+  maxAttempts: 2
+
+redis:
+  image: redis:8.2.1-alpine
+  storage:
+    size: 1Gi
+    storageClass: ""
+
+data:
+  existingClaim: ""
+  storageClass: ""
+  size: 10Gi
+  accessModes:
+    - ReadWriteMany
+
+podAnnotations: {}
