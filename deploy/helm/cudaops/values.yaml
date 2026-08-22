@@ -56,3 +56,12 @@ data:
     - ReadWriteMany
 
 podAnnotations: {}
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {}
+  prometheusRule:
+    enabled: false
+    labels: {}

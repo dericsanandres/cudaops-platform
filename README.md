@@ -64,8 +64,12 @@ GPU parity checks require an RTX 5060 (compute capability `sm_120`) and CUDA 13.
 
 The Phase 2 Helm chart deploys the API, GPU worker, Redis, and shared job storage to a GPU-enabled Kubernetes cluster. See [the Kubernetes deployment guide](docs/deploy-kubernetes.md) for required RWX storage, image registry configuration, GPU scheduling, and the CPU-only override.
 
+The chart can also create opt-in Prometheus Operator ServiceMonitors and alert rules. The [worker failure runbook](docs/runbooks/worker-failures.md) covers the resulting failure, retry, and fallback signals.
+
+[Initial service objectives](docs/slo.md) define targets for a Kubernetes deployment; they are not claims about the locally accepted environment.
+
 ## v0.1 limitations
 
-One worker processes one image at a time. There is no authentication, cancellation, retention policy, web UI, distributed tracing, or remote GPU CI. Terraform, Prometheus Operator resources, cluster-managed GPU telemetry, production Redis, and additional image operations remain deferred.
+One worker processes one image at a time. There is no authentication, cancellation, retention policy, web UI, distributed tracing, or remote GPU CI. Terraform, cluster-managed GPU telemetry, production Redis, and additional image operations remain deferred.
 
 This independent project is not affiliated with or endorsed by NVIDIA.

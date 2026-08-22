@@ -1,0 +1,40 @@
+{{- if .Values.monitoring.prometheusRule.enabled }}
+{{- $workerService := printf "%s-worker" (include "cudaops.fullname" .) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "cudaops.fullname" . }}
+  labels:
+    {{- include "cudaops.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: cudaops.application
+      rules:
+        - alert: CUDAOpsJobFailure
+          expr: increase(cudaops_jobs_total{status="failed",namespace={{ .Release.Namespace | quote }},service={{ $workerService | quote }}}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CUDAOps jobs are failing
+            description: At least one CUDAOps job failed in the last 15 minutes.
+        - alert: CUDAOpsWorkerRetry
+          expr: increase(cudaops_worker_retries_total{namespace={{ .Release.Namespace | quote }},service={{ $workerService | quote }}}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CUDAOps worker is retrying processor launches
+            description: The worker observed one or more retryable processor launch failures in the last 15 minutes.
+        - alert: CUDAOpsCUDAFallback
+          expr: increase(cudaops_fallback_total{namespace={{ .Release.Namespace | quote }},service={{ $workerService | quote }}}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CUDAOps automatically fell back to CPU
+            description: One or more auto-device jobs did not complete on CUDA in the last 15 minutes.
+{{- end }}
