@@ -68,7 +68,7 @@ The chart can also create opt-in Prometheus Operator ServiceMonitors and alert r
 
 [Initial service objectives](docs/slo.md) define targets for a Kubernetes deployment; they are not claims about the locally accepted environment.
 
-## v0.1 limitations
+## Current limitations
 
 One worker processes one image at a time. There is no authentication, cancellation, retention policy, web UI, distributed tracing, or remote GPU CI. Terraform, cluster-managed GPU telemetry, production Redis, and additional image operations remain deferred.
 
