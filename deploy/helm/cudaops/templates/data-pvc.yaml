@@ -1,0 +1,17 @@
+{{- if not .Values.data.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "cudaops.fullname" . }}-data
+  labels:
+    {{- include "cudaops.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .Values.data.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.data.size }}
+  {{- with .Values.data.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{- end }}
