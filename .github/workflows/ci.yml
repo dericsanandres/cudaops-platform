@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
       - run: helm lint deploy/helm/cudaops
       - run: helm template cudaops deploy/helm/cudaops > /dev/null
       - run: helm template cudaops deploy/helm/cudaops --values deploy/helm/cudaops/values-cpu.yaml > /dev/null
