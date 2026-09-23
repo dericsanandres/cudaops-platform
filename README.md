@@ -20,6 +20,8 @@
 
 CUDAOps began as my hands-on way to learn CUDA on a laptop GPU. I wanted to understand more than a standalone kernel, so I put a small deterministic image processor behind an API and then followed the job through Redis, a worker, shared storage, metrics, containers, and Kubernetes. It is an engineering experiment, not a production product or a performance showcase.
 
+The repository also includes shared [Codex instructions](AGENTS.md) and a [Claude Code entry point](CLAUDE.md) for AI-assisted development. They give coding agents the same project constraints and verification steps, while keeping the work reviewable. The workload is Sobel image processing; it does not train or serve an AI model.
+
 ## Why I built this
 
 Running a CUDA kernel answered only the first question: could I make useful work happen on the GPU? The more interesting learning came from the boundaries around it—choosing CPU or CUDA, keeping outputs identical, recovering interrupted jobs, observing fallbacks and retries, packaging the runtime, and deploying the same flow elsewhere.
